@@ -1,12 +1,14 @@
 <div align="center">
 
-# StellarStream Contracts
+# Perenna Contracts
+
+![Stellar](https://img.shields.io/badge/Stellar-Soroban-7D00FF?logo=stellar&logoColor=white)
 
 **Continuous, linear payment streams on Stellar — built with Soroban.**
 
 Lock funds once. They unlock to the recipient every second until the stream ends.
 
-[![CI](https://github.com/Deyanju23/stellar-stream-contract/actions/workflows/ci.yml/badge.svg)](https://github.com/Deyanju23/stellar-stream-contract/actions/workflows/ci.yml)
+[![CI](https://github.com/Perenna-Labs/perenna-contracts/actions/workflows/ci.yml/badge.svg)](https://github.com/Perenna-Labs/perenna-contracts/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](https://www.rust-lang.org/)
 [![soroban-sdk](https://img.shields.io/badge/soroban--sdk-28.x-blue.svg)](https://crates.io/crates/soroban-sdk)
@@ -14,7 +16,7 @@ Lock funds once. They unlock to the recipient every second until the stream ends
 
 </div>
 
-StellarStream is a protocol for streaming payments on Stellar. A sender locks a
+Perenna is a protocol for streaming payments on Stellar. A sender locks a
 token deposit into a Soroban contract together with a start and stop time. From
 that point the balance accrues to the recipient continuously, and the recipient
 can withdraw whatever has accrued at any moment. If the stream is cancellable,
@@ -23,6 +25,24 @@ the sender is refunded the rest.
 
 This repository holds the contracts. The application layer (web app, SDK,
 indexer) lives in a separate repository.
+
+## Table of Contents
+
+- [How it uses Stellar](#how-it-uses-stellar)
+- [Why](#why)
+- [Architecture](#architecture)
+- [Maintainers](#maintainers)
+- [Community](#community)
+- [Prerequisites](#prerequisites)
+- [Quick start](#quick-start)
+- [Contract interface (summary)](#contract-interface-summary)
+- [Security](#security)
+- [Contributing](#contributing)
+- [Contributors](#contributors)
+
+## How it uses Stellar
+
+Perenna is a **Soroban** streaming-payment protocol on **Stellar**: a sender locks a token deposit into the contract with a start and stop time, and the balance accrues to the recipient continuously so it can be withdrawn at any moment. Accrual is exact integer math against the ledger timestamp — no drift, no floating point.
 
 ## Why
 
@@ -36,7 +56,7 @@ live on-chain instead of in a spreadsheet.
 ## Architecture
 
 ```
-stellar-stream-contract/
+perenna-contracts/
 ├── contracts/
 │   └── stream/                 # The streaming contract (single responsibility)
 │       └── src/
@@ -67,13 +87,21 @@ so there is no drift and no floating point.
 
 | Name | Role | Contact |
 | --- | --- | --- |
-| Deyanju23 | Maintainer | GitHub [@Deyanju23](https://github.com/Deyanju23) · |
+| Perenna-Labs | Maintainer | GitHub [@Perenna-Labs](https://github.com/Perenna-Labs) · |
 
 ## Community
 
 Questions, ideas, and Wave discussion happen in the project's GitHub
-[Discussions](https://github.com/Deyanju23/stellar-stream-contract/discussions)
+[Discussions](https://github.com/Perenna-Labs/perenna-contracts/discussions)
 and Issues. For anything security-related, read `SECURITY.md` first.
+
+## Prerequisites
+
+| Tool | Notes |
+| --- | --- |
+| **Rust** | stable (pinned in `rust-toolchain.toml`) |
+| **Stellar CLI** | build/deploy helper |
+| **Make** | convenience targets (`make test/build/clippy/fmt`) |
 
 ## Quick start
 
@@ -81,8 +109,8 @@ Prerequisites: Rust (the pinned toolchain in `rust-toolchain.toml` is applied
 automatically by `rustup`) and the Stellar CLI for deployment.
 
 ```bash
-git clone https://github.com/Deyanju23/stellar-stream-contract.git
-cd stellar-stream-contract
+git clone https://github.com/Perenna-Labs/perenna-contracts.git
+cd perenna-contracts
 
 make test      # run the test suite
 make build     # build the release wasm artifact
@@ -91,7 +119,7 @@ make fmt       # format
 ```
 
 The release artifact is written to
-`target/wasm32v1-none/release/stellar_stream.wasm`. See
+`target/wasm32v1-none/release/perenna.wasm`. See
 `docs/DEPLOYMENT.md` to deploy it and `docs/CONTRACT_SPEC.md` for the full
 interface.
 
@@ -108,6 +136,13 @@ interface.
 
 Full parameters, return types, auth, and events: `docs/CONTRACT_SPEC.md`.
 
+## Security
+
+- **Never commit secrets** — keep keys, seed phrases, and `.env` files out of source control.
+- **Testnet values have no real-world value**; treat testnet deployments as experimental.
+- **Keys never leave the wallet** — signing is delegated to the user's Stellar wallet; the app does not store secret keys.
+- Report vulnerabilities per `SECURITY.md` where present rather than opening a public issue.
+
 ## Contributing
 
 Read `CONTRIBUTING.md`. Issues labelled `good first issue` and `Stellar Wave`
@@ -122,6 +157,6 @@ MIT — see `LICENSE`.
 
 Thanks to everyone who has contributed.
 
-<a href="https://github.com/Deyanju23/stellar-stream-contract/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Deyanju23/stellar-stream-contract" alt="Contributors" />
+<a href="https://github.com/Perenna-Labs/perenna-contracts/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Perenna-Labs/perenna-contracts" alt="Contributors" />
 </a>
