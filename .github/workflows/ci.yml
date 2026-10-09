@@ -17,10 +17,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32v1-none
-          components: clippy, rustfmt
+        # v2.0.0; reads rust-toolchain.toml for channel, components, and targets.
+        uses: actions-rust-lang/setup-rust-toolchain@c8ff772090ab9d00f7f7bd7b388f3c3032282e3b
 
       - name: Cache cargo registry & build
         uses: actions/cache@v4
@@ -52,9 +50,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32v1-none
+        # v2.0.0; reads rust-toolchain.toml for channel, components, and targets.
+        uses: actions-rust-lang/setup-rust-toolchain@c8ff772090ab9d00f7f7bd7b388f3c3032282e3b
 
       - name: Install Stellar CLI
         run: |
