@@ -606,6 +606,7 @@ fn test_withdraw_too_much_fails() {
 
 #[test]
 fn test_withdraw_exact_available_boundary() {
+fn test_withdraw_negative_amount_fails() {
     let env = Env::default();
     env.mock_all_auths();
     let (client, _admin) = setup_contract(&env);
@@ -642,6 +643,13 @@ fn test_withdraw_exact_available_boundary() {
 
     // Follow-up balance_of is exactly 0
     assert_eq!(client.balance_of(&stream_id, &recipient), 0);
+    set_ledger_timestamp(&env, 1500);
+    let before = client.get_stream(&stream_id);
+    let result = client.try_withdraw(&stream_id, &-500_i128);
+
+    assert_eq!(result, Err(Ok(StreamError::InvalidWithdrawAmount)));
+    assert_eq!(client.get_stream(&stream_id), before);
+    assert_eq!(token_client.balance(&recipient), 0);
 }
 
 #[test]
