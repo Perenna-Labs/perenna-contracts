@@ -223,6 +223,47 @@ fn test_create_multiple_streams_increments_id() {
     assert_eq!(id1, 1);
 }
 
+#[test]
+fn test_retroactive_stream_accrual() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let (token_client, token_admin_client) = create_token(&env, &sender);
+
+    let deposit: i128 = 1_000_000;
+    token_admin_client.mint(&sender, &deposit);
+
+    // Advance ledger timestamp to 1500 before creation
+    set_ledger_timestamp(&env, 1500);
+
+    // Create stream with start_time = 1000, stop_time = 2000 (50% elapsed retroactively)
+    let stream_id = client.create_stream(
+        &sender,
+        &recipient,
+        &token_client.address,
+        &deposit,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+
+    // Immediately after creation, recipient has 500_000 available
+    let recipient_bal = client.balance_of(&stream_id, &recipient);
+    let sender_bal = client.balance_of(&stream_id, &sender);
+
+    assert_eq!(recipient_bal, 500_000);
+    assert_eq!(sender_bal, 500_000);
+    assert_eq!(recipient_bal + sender_bal, deposit);
+
+    // Recipient can immediately withdraw accrued tokens
+    client.withdraw(&stream_id, &recipient_bal);
+    assert_eq!(token_client.balance(&recipient), 500_000);
+    assert_eq!(client.balance_of(&stream_id, &recipient), 0);
+}
+
 // =============================================================================
 // Balance Calculation Tests
 // =============================================================================
