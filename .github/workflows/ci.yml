@@ -21,7 +21,7 @@ jobs:
     - name: Install Rust toolchain
       uses: actions-rust-lang/setup-rust-toolchain@c8ff772090ab9d00f7f7bd7b388f3c3032282e3b
     - name: Cache cargo registry & build
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: '~/.cargo/registry
 
