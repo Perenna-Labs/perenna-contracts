@@ -467,6 +467,46 @@ fn test_withdraw_too_much_fails() {
 }
 
 #[test]
+fn test_withdraw_exact_available_boundary() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let (token_client, token_admin_client) = create_token(&env, &sender);
+
+    let deposit: i128 = 1_000_000;
+    token_admin_client.mint(&sender, &deposit);
+
+    let stream_id = client.create_stream(
+        &sender,
+        &recipient,
+        &token_client.address,
+        &deposit,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+
+    // At fractional timestamp 1400 (40% elapsed): available is 400_000
+    set_ledger_timestamp(&env, 1400);
+    let available = client.balance_of(&stream_id, &recipient);
+    assert_eq!(available, 400_000);
+
+    // Withdrawing one unit more than available fails
+    let fail_res = client.try_withdraw(&stream_id, &(available + 1));
+    assert_eq!(fail_res, Err(Ok(StreamError::WithdrawAmountTooHigh)));
+
+    // Withdrawing exactly available succeeds
+    client.withdraw(&stream_id, &available);
+    assert_eq!(token_client.balance(&recipient), available);
+
+    // Follow-up balance_of is exactly 0
+    assert_eq!(client.balance_of(&stream_id, &recipient), 0);
+}
+
+#[test]
 fn test_withdraw_multiple_times() {
     let env = Env::default();
     env.mock_all_auths();
