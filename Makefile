@@ -1,4 +1,4 @@
-.PHONY: build test clean clippy fmt check
+.PHONY: build test clean clippy fmt check ci
 
 # soroban-sdk v28 refuses a plain `cargo build`; the contract must be built
 # through the Stellar CLI, which optimizes the wasm and writes the wasm hash.
@@ -20,3 +20,4 @@ fmt:
 
 check:
 	cargo check --all-targets
+ci: fmt clippy test check
