@@ -1,3 +1,12 @@
+# Build artifacts
 /target
 **/target
 contracts/stream/test_snapshots/
+
+# Environment configurations and secrets
+.env
+.env.*
+!.env.example
+
+# Built wasm artifacts
+*.wasm
