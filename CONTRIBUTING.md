@@ -33,7 +33,7 @@ request.
   `StreamError` instead.
 - Use checked arithmetic (`checked_add`, `checked_mul`, …) and map failure to
   `StreamError::MathOverflow`.
-- Every state change emits an event. Every public function has a doc comment.
+- Every stream lifecycle state change emits an event (except one-time initialisation; see `docs/CONTRACT_SPEC.md` §4). Every public function has a doc comment.
 - Storage keys live in `DataKey`. Extend TTL on every persistent read/write.
 - Keep one contract per responsibility. Do not add speculative functions.
 
