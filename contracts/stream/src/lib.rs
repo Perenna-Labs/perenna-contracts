@@ -74,6 +74,9 @@ impl StreamContract {
         if start_time >= stop_time {
             return Err(StreamError::InvalidTimeRange);
         }
+        if sender == recipient {
+            return Err(StreamError::SenderIsRecipient);
+        }
 
         // Informational rate for clients. The remainder from integer division
         // does not affect distribution, which uses the exact earned formula

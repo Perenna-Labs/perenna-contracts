@@ -16,4 +16,5 @@ pub enum StreamError {
     WithdrawAmountTooHigh = 10,
     NotCancelable = 11,
     MathOverflow = 12,
+    SenderIsRecipient = 13,
 }
