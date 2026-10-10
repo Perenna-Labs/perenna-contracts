@@ -28,7 +28,6 @@ Do not open a public issue for a suspected vulnerability.
 
 - Preferred: open a private report via GitHub Security Advisories —
   https://github.com/Deyanju23/stellar-stream-contract/security/advisories/new
-- Or contact the maintainer directly: `@your-telegram` (Telegram)
 
 Include, where possible:
 
