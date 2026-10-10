@@ -242,6 +242,32 @@ fn test_create_stream_invalid_time_range_fails() {
 }
 
 #[test]
+fn test_create_stream_sender_equals_recipient_fails() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+
+    let sender = Address::generate(&env);
+    let (token_client, token_admin_client) = create_token(&env, &sender);
+
+    let deposit: i128 = 1_000_000;
+    token_admin_client.mint(&sender, &deposit);
+
+    let result = client.try_create_stream(
+        &sender,
+        &sender,
+        &token_client.address,
+        &deposit,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+
+    assert_eq!(result, Err(Ok(StreamError::SenderIsRecipient)));
+    assert_eq!(token_client.balance(&sender), deposit);
+}
+
+#[test]
 fn test_create_multiple_streams_increments_id() {
     let env = Env::default();
     env.mock_all_auths();

@@ -75,6 +75,7 @@ earned  = deposit_amount * elapsed / duration        // i128, integer division
 | 13 | `InvalidAdmin` | Contract itself supplied as `admin` in `init` |
 | 13 | `InvalidWithdrawAmount` | `amount <= 0` in `withdraw` |
 | 13 | `ZeroWithdrawAmount` | `amount <= 0` in `withdraw` |
+| 13 | `SenderIsRecipient` | `sender == recipient` in `create_stream` |
 
 Codes are stable and part of the ABI. Do not renumber. Removing a variant is a
 breaking change.
@@ -125,7 +126,8 @@ create_stream(
 
 - **Auth:** `sender.require_auth()`.
 - **Validation:** `deposit_amount > 0`, else `ZeroDeposit`;
-  `start_time < stop_time`, else `InvalidTimeRange`.
+  `start_time < stop_time`, else `InvalidTimeRange`;
+  `sender != recipient`, else `SenderIsRecipient`.
 - **Effects:** transfers `deposit_amount` from `sender` to the contract,
   assigns the next id, stores the `Stream`, increments `NextStreamId`.
   Returns the new id.
