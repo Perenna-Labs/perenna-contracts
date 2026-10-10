@@ -29,26 +29,8 @@ pub struct StreamCanceled {
     pub recipient_payout: i128,
 }
 
-#[allow(clippy::too_many_arguments)]
-pub fn emit_stream_created(
-    env: &Env,
-    sender: &Address,
-    recipient: &Address,
-    stream_id: u64,
-    token: &Address,
-    deposit_amount: i128,
-    start_time: u64,
-    stop_time: u64,
-) {
-    env.events().publish_event(&StreamCreated {
-        sender: sender.clone(),
-        recipient: recipient.clone(),
-        stream_id,
-        token: token.clone(),
-        deposit_amount,
-        start_time,
-        stop_time,
-    });
+pub fn emit_stream_created(env: &Env, event: &StreamCreated) {
+    env.events().publish_event(event);
 }
 
 pub fn emit_tokens_withdrawn(
