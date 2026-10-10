@@ -182,6 +182,13 @@ impl StreamContract {
     /// Withdraw accrued tokens from a stream. Only the recipient may call this.
     pub fn withdraw(env: Env, stream_id: u64, amount: i128) -> Result<(), StreamError> {
         require_initialized(&env)?;
+        if amount < 0 {
+            return Err(StreamError::InvalidWithdrawAmount);
+        }
+        if amount == 0 {
+            return Err(StreamError::ZeroWithdrawAmount);
+        }
+
         let mut stream = storage::get_stream(&env, stream_id)?;
         storage::extend_stream_ttl(&env, stream_id);
 
@@ -196,11 +203,6 @@ impl StreamContract {
         let available = earned
             .checked_sub(stream.recipient_withdrawn)
             .ok_or(StreamError::MathOverflow)?;
-
-        if amount <= 0 {
-            return Err(StreamError::InvalidWithdrawAmount);
-            return Err(StreamError::ZeroWithdrawAmount);
-        }
 
         if amount > available {
             return Err(StreamError::WithdrawAmountTooHigh);

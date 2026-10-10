@@ -73,9 +73,9 @@ earned  = deposit_amount * elapsed / duration        // i128, integer division
 | 11 | `NotCancelable` | `cancel` on a stream with `cancelable = false` |
 | 12 | `MathOverflow` | Any checked arithmetic overflows |
 | 13 | `InvalidAdmin` | Contract itself supplied as `admin` in `init` |
-| 13 | `InvalidWithdrawAmount` | `amount <= 0` in `withdraw` |
-| 13 | `ZeroWithdrawAmount` | `amount <= 0` in `withdraw` |
-| 13 | `SenderIsRecipient` | `sender == recipient` in `create_stream` |
+| 14 | `InvalidWithdrawAmount` | `amount < 0` in `withdraw` |
+| 15 | `ZeroWithdrawAmount` | `amount == 0` in `withdraw` |
+| 16 | `SenderIsRecipient` | `sender == recipient` in `create_stream` |
 
 Codes are stable and part of the ABI. Do not renumber. Removing a variant is a
 breaking change.
@@ -89,10 +89,8 @@ All emitted via `#[contractevent]`.
 | Event | Fields | Emitted by |
 | --- | --- | --- |
 | `StreamCreated` | `sender, recipient, stream_id, token, deposit_amount, start_time, stop_time, cancelable` | `create_stream` |
-| `TokensWithdrawn` | `recipient, stream_id, amount, remaining_balance` | `withdraw` |
-| `StreamCanceled` | `stream_id, sender, recipient, sender_refund, recipient_payout` | `cancel` |
 | `TokensWithdrawn` | `recipient, stream_id, amount, remaining_balance, recipient_withdrawn` | `withdraw` |
-| `StreamCanceled` | `stream_id, sender_refund, recipient_payout` | `cancel` |
+| `StreamCanceled` | `stream_id, sender, recipient, sender_refund, recipient_payout` | `cancel` |
 
 Every state-changing function emits exactly one event.
 
@@ -150,9 +148,8 @@ create_stream(
 ### `withdraw(stream_id: u64, amount: i128) -> Result<(), StreamError>`
 
 - **Auth:** `recipient.require_auth()`.
-- **Validation:** `amount <= 0` returns `InvalidWithdrawAmount`;
-- **Validation:** `amount <= 0` returns `ZeroWithdrawAmount`;
-  `amount <= earned - recipient_withdrawn`, else
+- **Validation:** `amount < 0` returns `InvalidWithdrawAmount`; `amount == 0`
+  returns `ZeroWithdrawAmount`; `amount <= earned - recipient_withdrawn`, else
   `WithdrawAmountTooHigh`; `StreamCanceled` if already cancelled;
   `StreamNotFound` if missing.
 - **Effects:** increments `recipient_withdrawn`, decrements

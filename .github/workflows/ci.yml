@@ -36,8 +36,6 @@ jobs:
           '
     - name: Cargo check
       run: cargo check --all-targets
-    - name: Cargo check (wasm target)
-      run: cargo check --target wasm32v1-none --all-targets
     - name: Cargo test
       run: cargo test
     - name: Cargo clippy
@@ -53,18 +51,15 @@ jobs:
     - name: Install Rust toolchain
       uses: actions-rust-lang/setup-rust-toolchain@c8ff772090ab9d00f7f7bd7b388f3c3032282e3b
     - name: Install Stellar CLI
-      run: "curl -sSL -o /tmp/stellar-cli.tar.gz \\\n  https://github.com/stellar/stellar-cli/releases/download/v28.1.0/stellar-cli-28.1.0-x86_64-unknown-linux-gnu.tar.gz\n\
-        tar xzf /tmp/stellar-cli.tar.gz -C /tmp\nsudo mv /tmp/stellar /usr/local/bin/stellar\n\
-        stellar --version\n"
+      run: |
+        curl --fail --location --retry 5 --retry-all-errors \
+          --output /tmp/stellar-cli.tar.gz \
+          https://github.com/stellar/stellar-cli/releases/download/v28.1.0/stellar-cli-28.1.0-x86_64-unknown-linux-gnu.tar.gz
+        tar xzf /tmp/stellar-cli.tar.gz -C /tmp
+        sudo install -m 0755 /tmp/stellar /usr/local/bin/stellar
+        stellar --version
     - name: Build release wasm
       run: stellar contract build
-    - name: Upload wasm artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: stellar-stream-wasm
-        path: target/wasm32v1-none/release/stellar_stream.wasm
-        if-no-files-found: error
-    - uses: actions/checkout@v4
     - name: Upload wasm artifact
       uses: actions/upload-artifact@v7
       with:

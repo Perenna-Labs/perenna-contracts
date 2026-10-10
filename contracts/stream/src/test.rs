@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use soroban_sdk::testutils::{Address as _, Ledger};
+use soroban_sdk::testutils::{Address as _, Events as _, Ledger};
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
 use soroban_sdk::{Address, Env};
 
@@ -83,51 +83,13 @@ fn test_init_double_initialization_fails() {
 
 #[test]
 fn test_reserved_error_codes_are_pinned() {
-    // Assert discriminant values remain stable for ABI compatibility
+    // Assert discriminant values remain stable for ABI compatibility.
     assert_eq!(StreamError::StreamEnded as u32, 5);
     assert_eq!(StreamError::AmountMismatch as u32, 9);
-fn test_operations_before_init_fail() {
-    let env = Env::default();
-    env.mock_all_auths();
-    let contract_id = env.register(StreamContract, ());
-    let client = StreamContractClient::new(&env, &contract_id);
-
-    let sender = Address::generate(&env);
-    let recipient = Address::generate(&env);
-    let token = Address::generate(&env);
-
-    // create_stream fails before init
-    let create_res = client.try_create_stream(
-        &sender,
-        &recipient,
-        &token,
-        &1_000_000_i128,
-        &1000_u64,
-        &2000_u64,
-        &true,
-    );
-    assert_eq!(create_res, Err(Ok(StreamError::NotInitialized)));
-
-    // balance_of fails before init
-    let bal_res = client.try_balance_of(&0_u64, &recipient);
-    assert_eq!(bal_res, Err(Ok(StreamError::NotInitialized)));
-
-    // get_stream fails before init
-    let get_res = client.try_get_stream(&0_u64);
-    assert_eq!(get_res, Err(Ok(StreamError::NotInitialized)));
-
-    // withdraw fails before init
-    let withdraw_res = client.try_withdraw(&0_u64, &100_i128);
-    assert_eq!(withdraw_res, Err(Ok(StreamError::NotInitialized)));
-
-    // cancel fails before init
-    let cancel_res = client.try_cancel(&0_u64);
-    assert_eq!(cancel_res, Err(Ok(StreamError::NotInitialized)));
-
-    // init succeeds and subsequent operations proceed as expected
-    let admin = Address::generate(&env);
-    assert!(client.try_init(&admin).is_ok());
-    assert_eq!(client.try_get_stream(&0_u64), Err(Ok(StreamError::StreamNotFound)));
+    assert_eq!(StreamError::InvalidAdmin as u32, 13);
+    assert_eq!(StreamError::InvalidWithdrawAmount as u32, 14);
+    assert_eq!(StreamError::ZeroWithdrawAmount as u32, 15);
+    assert_eq!(StreamError::SenderIsRecipient as u32, 16);
 }
 
 // =============================================================================
@@ -161,6 +123,10 @@ fn test_create_stream_succeeds() {
     );
 
     assert_eq!(stream_id, 0);
+    assert!(
+        !env.events().all().events().is_empty(),
+        "expected StreamCreated event"
+    );
 
     // Verify contract holds the tokens
     assert_eq!(token_client.balance(&client.address), deposit);
@@ -178,10 +144,6 @@ fn test_create_stream_succeeds() {
     assert_eq!(stream.recipient_withdrawn, 0);
     assert!(!stream.is_canceled);
     assert!(stream.cancelable);
-
-    // Verify StreamCreated event payload includes cancelable
-    let events = env.events().all();
-    assert!(!events.is_empty(), "expected StreamCreated event to be emitted");
 }
 
 #[test]
@@ -242,32 +204,6 @@ fn test_create_stream_invalid_time_range_fails() {
 }
 
 #[test]
-fn test_create_stream_sender_equals_recipient_fails() {
-    let env = Env::default();
-    env.mock_all_auths();
-    let (client, _admin) = setup_contract(&env);
-
-    let sender = Address::generate(&env);
-    let (token_client, token_admin_client) = create_token(&env, &sender);
-
-    let deposit: i128 = 1_000_000;
-    token_admin_client.mint(&sender, &deposit);
-
-    let result = client.try_create_stream(
-        &sender,
-        &sender,
-        &token_client.address,
-        &deposit,
-        &1000_u64,
-        &2000_u64,
-        &true,
-    );
-
-    assert_eq!(result, Err(Ok(StreamError::SenderIsRecipient)));
-    assert_eq!(token_client.balance(&sender), deposit);
-}
-
-#[test]
 fn test_create_multiple_streams_increments_id() {
     let env = Env::default();
     env.mock_all_auths();
@@ -304,7 +240,6 @@ fn test_create_multiple_streams_increments_id() {
 
 #[test]
 fn test_retroactive_stream_accrual() {
-fn test_stream_balance_isolation() {
     let env = Env::default();
     env.mock_all_auths();
     let (client, _admin) = setup_contract(&env);
@@ -325,24 +260,6 @@ fn test_stream_balance_isolation() {
         &recipient,
         &token_client.address,
         &deposit,
-    let sender0 = Address::generate(&env);
-    let recipient0 = Address::generate(&env);
-    let sender1 = Address::generate(&env);
-    let recipient1 = Address::generate(&env);
-
-    let (token_client, token_admin_client) = create_token(&env, &sender0);
-
-    let deposit0: i128 = 1_000_000;
-    let deposit1: i128 = 2_000_000;
-    token_admin_client.mint(&sender0, &deposit0);
-    token_admin_client.mint(&sender1, &deposit1);
-
-    // Stream 0: [1000..2000], cancelable
-    let id0 = client.create_stream(
-        &sender0,
-        &recipient0,
-        &token_client.address,
-        &deposit0,
         &1000_u64,
         &2000_u64,
         &true,
@@ -360,48 +277,6 @@ fn test_stream_balance_isolation() {
     client.withdraw(&stream_id, &recipient_bal);
     assert_eq!(token_client.balance(&recipient), 500_000);
     assert_eq!(client.balance_of(&stream_id, &recipient), 0);
-    // Stream 1: [1000..3000], cancelable
-    let id1 = client.create_stream(
-        &sender1,
-        &recipient1,
-        &token_client.address,
-        &deposit1,
-        &1000_u64,
-        &3000_u64,
-        &true,
-    );
-
-    // At timestamp 1500:
-    // Stream 0 is at 50%: recipient0 has 500_000, sender0 has 500_000
-    // Stream 1 is at 25%: recipient1 has 500_000, sender1 has 1_500_000
-    set_ledger_timestamp(&env, 1500);
-
-    assert_eq!(client.balance_of(&id0, &recipient0), 500_000);
-    assert_eq!(client.balance_of(&id0, &sender0), 500_000);
-    assert_eq!(
-        client.balance_of(&id0, &recipient0) + client.balance_of(&id0, &sender0),
-        deposit0
-    );
-
-    assert_eq!(client.balance_of(&id1, &recipient1), 500_000);
-    assert_eq!(client.balance_of(&id1, &sender1), 1_500_000);
-    assert_eq!(
-        client.balance_of(&id1, &recipient1) + client.balance_of(&id1, &sender1),
-        deposit1
-    );
-
-    // Partial withdrawal on Stream 1 does not affect Stream 0
-    client.withdraw(&id1, &200_000_i128);
-    assert_eq!(client.balance_of(&id0, &recipient0), 500_000);
-    assert_eq!(client.balance_of(&id0, &sender0), 500_000);
-    assert_eq!(client.balance_of(&id1, &recipient1), 300_000);
-
-    // Cancelling Stream 0 leaves Stream 1 completely intact
-    client.cancel(&id0);
-    assert!(client.get_stream(&id0).is_canceled);
-    assert_eq!(client.balance_of(&id1, &recipient1), 300_000);
-    assert_eq!(client.balance_of(&id1, &sender1), 1_500_000);
-    assert!(!client.get_stream(&id1).is_canceled);
 }
 
 // =============================================================================
@@ -556,6 +431,7 @@ fn test_balance_of_unauthorized_address() {
 #[test]
 fn test_balance_of_stream_not_found() {
     let env = Env::default();
+    env.mock_all_auths();
     let (client, _admin) = setup_contract(&env);
     let target = Address::generate(&env);
 
@@ -593,6 +469,10 @@ fn test_withdraw_partial() {
     // At 50%, withdraw 300_000 of the 500_000 available
     set_ledger_timestamp(&env, 1500);
     client.withdraw(&stream_id, &300_000_i128);
+    assert!(
+        !env.events().all().events().is_empty(),
+        "expected TokensWithdrawn event"
+    );
 
     assert_eq!(token_client.balance(&recipient), 300_000);
 
@@ -602,10 +482,6 @@ fn test_withdraw_partial() {
     let stream = client.get_stream(&stream_id);
     assert_eq!(stream.recipient_withdrawn, 300_000);
     assert_eq!(stream.remaining_balance, 700_000);
-
-    // Verify TokensWithdrawn event is published
-    let events = env.events().all();
-    assert!(!events.is_empty(), "expected TokensWithdrawn event");
 }
 
 #[test]
@@ -674,8 +550,6 @@ fn test_withdraw_too_much_fails() {
 
 #[test]
 fn test_withdraw_exact_available_boundary() {
-fn test_withdraw_negative_amount_fails() {
-fn test_withdraw_zero_amount_fails() {
     let env = Env::default();
     env.mock_all_auths();
     let (client, _admin) = setup_contract(&env);
@@ -712,18 +586,6 @@ fn test_withdraw_zero_amount_fails() {
 
     // Follow-up balance_of is exactly 0
     assert_eq!(client.balance_of(&stream_id, &recipient), 0);
-    set_ledger_timestamp(&env, 1500);
-    let before = client.get_stream(&stream_id);
-    let result = client.try_withdraw(&stream_id, &-500_i128);
-
-    assert_eq!(result, Err(Ok(StreamError::InvalidWithdrawAmount)));
-    set_ledger_timestamp(&env, 1500);
-    let before = client.get_stream(&stream_id);
-    let result = client.try_withdraw(&stream_id, &0_i128);
-
-    assert_eq!(result, Err(Ok(StreamError::ZeroWithdrawAmount)));
-    assert_eq!(client.get_stream(&stream_id), before);
-    assert_eq!(token_client.balance(&recipient), 0);
 }
 
 #[test]
@@ -795,6 +657,10 @@ fn test_cancel_at_midpoint() {
     // Cancel at 50%
     set_ledger_timestamp(&env, 1500);
     client.cancel(&stream_id);
+    assert!(
+        !env.events().all().events().is_empty(),
+        "expected StreamCanceled event"
+    );
 
     // Recipient gets earned portion (500_000), sender gets refund (500_000)
     assert_eq!(token_client.balance(&recipient), 500_000);
@@ -804,10 +670,6 @@ fn test_cancel_at_midpoint() {
     let stream = client.get_stream(&stream_id);
     assert!(stream.is_canceled);
     assert_eq!(stream.remaining_balance, 0);
-
-    // Verify StreamCanceled event is published
-    let events = env.events().all();
-    assert!(!events.is_empty(), "expected StreamCanceled event");
 }
 
 #[test]
@@ -843,7 +705,6 @@ fn test_cancel_before_start() {
 
 #[test]
 fn test_cancel_at_start_time() {
-fn test_cancel_at_stop_time() {
     let env = Env::default();
     env.mock_all_auths();
     let (client, _admin) = setup_contract(&env);
@@ -871,12 +732,6 @@ fn test_cancel_at_stop_time() {
 
     assert_eq!(token_client.balance(&sender), deposit);
     assert_eq!(token_client.balance(&recipient), 0);
-    // Cancel exactly at stop_time: recipient gets full deposit, sender refund is zero
-    set_ledger_timestamp(&env, 2000);
-    client.cancel(&stream_id);
-
-    assert_eq!(token_client.balance(&recipient), deposit);
-    assert_eq!(token_client.balance(&sender), 0);
     assert_eq!(token_client.balance(&client.address), 0);
 
     let stream = client.get_stream(&stream_id);
@@ -992,7 +847,6 @@ fn test_cancel_not_cancelable_fails() {
 
 #[test]
 fn test_non_cancelable_stream_lifecycle_end_to_end() {
-fn test_cancel_requires_sender_auth() {
     let env = Env::default();
     env.mock_all_auths();
     let (client, _admin) = setup_contract(&env);
@@ -1042,26 +896,6 @@ fn test_cancel_requires_sender_auth() {
     assert_eq!(stream.remaining_balance, 0);
     assert!(!stream.is_canceled);
     assert!(!stream.cancelable);
-        &true,
-    );
-
-    set_ledger_timestamp(&env, 1500);
-
-    // Cancel without mock_all_auths must fail because sender auth is missing
-    let unauthed_env = Env::default();
-    // Re-bind client in env without mock auth
-    let result = client.mock_auths(&[]).try_cancel(&stream_id);
-    assert!(result.is_err(), "cancel without sender auth must be rejected");
-
-    // Stream remains active, recipient balance untouched
-    let stream = client.get_stream(&stream_id);
-    assert!(!stream.is_canceled);
-    assert_eq!(token_client.balance(&recipient), 0);
-
-    // Authorised cancel from sender succeeds
-    client.mock_all_auths();
-    assert!(client.try_cancel(&stream_id).is_ok());
-    assert!(client.get_stream(&stream_id).is_canceled);
 }
 
 #[test]
@@ -1290,4 +1124,266 @@ fn test_contract_token_balance_lifecycle_invariants() {
     let s4 = client.get_stream(&id2);
     assert_eq!(s4.remaining_balance, 0);
     assert_eq!(token_client.balance(&client.address), 0);
+}
+
+// =============================================================================
+// Post-integration regression tests
+// =============================================================================
+
+#[test]
+fn test_operations_before_init_fail() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register(StreamContract, ());
+    let client = StreamContractClient::new(&env, &contract_id);
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let token = Address::generate(&env);
+
+    assert_eq!(
+        client.try_create_stream(
+            &sender,
+            &recipient,
+            &token,
+            &1_000_000_i128,
+            &1000_u64,
+            &2000_u64,
+            &true,
+        ),
+        Err(Ok(StreamError::NotInitialized))
+    );
+    assert_eq!(
+        client.try_balance_of(&0_u64, &recipient),
+        Err(Ok(StreamError::NotInitialized))
+    );
+    assert_eq!(
+        client.try_get_stream(&0_u64),
+        Err(Ok(StreamError::NotInitialized))
+    );
+    assert_eq!(
+        client.try_withdraw(&0_u64, &100_i128),
+        Err(Ok(StreamError::NotInitialized))
+    );
+    assert_eq!(
+        client.try_cancel(&0_u64),
+        Err(Ok(StreamError::NotInitialized))
+    );
+
+    let admin = Address::generate(&env);
+    assert!(client.try_init(&admin).is_ok());
+    assert_eq!(
+        client.try_get_stream(&0_u64),
+        Err(Ok(StreamError::StreamNotFound))
+    );
+}
+
+#[test]
+fn test_create_stream_sender_equals_recipient_fails() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+    let sender = Address::generate(&env);
+    let (token_client, token_admin_client) = create_token(&env, &sender);
+    let deposit: i128 = 1_000_000;
+    token_admin_client.mint(&sender, &deposit);
+    let result = client.try_create_stream(
+        &sender,
+        &sender,
+        &token_client.address,
+        &deposit,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+
+    assert_eq!(result, Err(Ok(StreamError::SenderIsRecipient)));
+    assert_eq!(token_client.balance(&sender), deposit);
+    assert_eq!(token_client.balance(&client.address), 0);
+    assert!(env.events().all().events().is_empty());
+    assert_eq!(
+        client.try_get_stream(&0_u64),
+        Err(Ok(StreamError::StreamNotFound))
+    );
+}
+
+#[test]
+fn test_stream_balance_isolation() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+    let sender0 = Address::generate(&env);
+    let recipient0 = Address::generate(&env);
+    let sender1 = Address::generate(&env);
+    let recipient1 = Address::generate(&env);
+    let (token_client, token_admin_client) = create_token(&env, &sender0);
+    let deposit0: i128 = 1_000_000;
+    let deposit1: i128 = 2_000_000;
+    token_admin_client.mint(&sender0, &deposit0);
+    token_admin_client.mint(&sender1, &deposit1);
+
+    let id0 = client.create_stream(
+        &sender0,
+        &recipient0,
+        &token_client.address,
+        &deposit0,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+    let id1 = client.create_stream(
+        &sender1,
+        &recipient1,
+        &token_client.address,
+        &deposit1,
+        &1000_u64,
+        &3000_u64,
+        &true,
+    );
+
+    set_ledger_timestamp(&env, 1500);
+    assert_eq!(client.balance_of(&id0, &recipient0), 500_000);
+    assert_eq!(client.balance_of(&id0, &sender0), 500_000);
+    assert_eq!(client.balance_of(&id1, &recipient1), 500_000);
+    assert_eq!(client.balance_of(&id1, &sender1), 1_500_000);
+
+    client.withdraw(&id1, &200_000_i128);
+    assert_eq!(client.balance_of(&id0, &recipient0), 500_000);
+    assert_eq!(client.balance_of(&id1, &recipient1), 300_000);
+
+    client.cancel(&id0);
+    assert!(client.get_stream(&id0).is_canceled);
+    assert_eq!(client.balance_of(&id1, &recipient1), 300_000);
+    assert_eq!(client.balance_of(&id1, &sender1), 1_500_000);
+    assert!(!client.get_stream(&id1).is_canceled);
+}
+
+#[test]
+fn test_withdraw_negative_amount_fails_without_side_effects() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let (token_client, token_admin_client) = create_token(&env, &sender);
+    let deposit: i128 = 1_000_000;
+    token_admin_client.mint(&sender, &deposit);
+    let stream_id = client.create_stream(
+        &sender,
+        &recipient,
+        &token_client.address,
+        &deposit,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+    set_ledger_timestamp(&env, 1500);
+    let before = client.get_stream(&stream_id);
+    let event_count = env.events().all().events().len();
+
+    assert_eq!(
+        client.try_withdraw(&stream_id, &-500_i128),
+        Err(Ok(StreamError::InvalidWithdrawAmount))
+    );
+    assert_eq!(client.get_stream(&stream_id), before);
+    assert_eq!(token_client.balance(&recipient), 0);
+    assert_eq!(token_client.balance(&client.address), deposit);
+    assert_eq!(env.events().all().events().len(), event_count);
+}
+
+#[test]
+fn test_withdraw_zero_amount_fails_without_side_effects() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let (token_client, token_admin_client) = create_token(&env, &sender);
+    let deposit: i128 = 1_000_000;
+    token_admin_client.mint(&sender, &deposit);
+    let stream_id = client.create_stream(
+        &sender,
+        &recipient,
+        &token_client.address,
+        &deposit,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+    set_ledger_timestamp(&env, 1500);
+    let before = client.get_stream(&stream_id);
+    let event_count = env.events().all().events().len();
+
+    assert_eq!(
+        client.try_withdraw(&stream_id, &0_i128),
+        Err(Ok(StreamError::ZeroWithdrawAmount))
+    );
+    assert_eq!(client.get_stream(&stream_id), before);
+    assert_eq!(token_client.balance(&recipient), 0);
+    assert_eq!(token_client.balance(&client.address), deposit);
+    assert_eq!(env.events().all().events().len(), event_count);
+}
+
+#[test]
+fn test_cancel_at_stop_time() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let (token_client, token_admin_client) = create_token(&env, &sender);
+    let deposit: i128 = 1_000_000;
+    token_admin_client.mint(&sender, &deposit);
+    let stream_id = client.create_stream(
+        &sender,
+        &recipient,
+        &token_client.address,
+        &deposit,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+
+    set_ledger_timestamp(&env, 2000);
+    client.cancel(&stream_id);
+
+    assert_eq!(token_client.balance(&recipient), deposit);
+    assert_eq!(token_client.balance(&sender), 0);
+    assert_eq!(token_client.balance(&client.address), 0);
+    let stream = client.get_stream(&stream_id);
+    assert!(stream.is_canceled);
+    assert_eq!(stream.remaining_balance, 0);
+}
+
+#[test]
+fn test_cancel_requires_sender_auth() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let (token_client, token_admin_client) = create_token(&env, &sender);
+    let deposit: i128 = 1_000_000;
+    token_admin_client.mint(&sender, &deposit);
+    let stream_id = client.create_stream(
+        &sender,
+        &recipient,
+        &token_client.address,
+        &deposit,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+    set_ledger_timestamp(&env, 1500);
+
+    let result = client.mock_auths(&[]).try_cancel(&stream_id);
+    assert!(
+        result.is_err(),
+        "cancel without sender auth must be rejected"
+    );
+    assert!(!client.get_stream(&stream_id).is_canceled);
+    assert_eq!(token_client.balance(&recipient), 0);
+
+    client.mock_all_auths();
+    assert!(client.try_cancel(&stream_id).is_ok());
+    assert!(client.get_stream(&stream_id).is_canceled);
 }

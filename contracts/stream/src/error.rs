@@ -19,7 +19,7 @@ pub enum StreamError {
     NotCancelable = 11,
     MathOverflow = 12,
     InvalidAdmin = 13,
-    InvalidWithdrawAmount = 13,
-    ZeroWithdrawAmount = 13,
-    SenderIsRecipient = 13,
+    InvalidWithdrawAmount = 14,
+    ZeroWithdrawAmount = 15,
+    SenderIsRecipient = 16,
 }
