@@ -22,4 +22,5 @@ pub enum StreamError {
     InvalidWithdrawAmount = 14,
     ZeroWithdrawAmount = 15,
     SenderIsRecipient = 16,
+    InvalidToken = 17,
 }
