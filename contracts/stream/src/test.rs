@@ -70,6 +70,13 @@ fn test_init_double_initialization_fails() {
     assert_eq!(result, Err(Ok(StreamError::AlreadyInitialized)));
 }
 
+#[test]
+fn test_reserved_error_codes_are_pinned() {
+    // Assert discriminant values remain stable for ABI compatibility
+    assert_eq!(StreamError::StreamEnded as u32, 5);
+    assert_eq!(StreamError::AmountMismatch as u32, 9);
+}
+
 // =============================================================================
 // Stream Creation Tests
 // =============================================================================
