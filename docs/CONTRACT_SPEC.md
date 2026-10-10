@@ -60,7 +60,7 @@ earned  = deposit_amount * elapsed / duration        // i128, integer division
 
 | Code | Variant | Raised when |
 | --- | --- | --- |
-| 1 | `NotInitialized` | Admin read before `init` |
+| 1 | `NotInitialized` | Stream operations called before `init` |
 | 2 | `AlreadyInitialized` | `init` called twice |
 | 3 | `Unauthorized` | Caller is neither recipient nor sender where one is required |
 | 4 | `StreamNotFound` | No `Stream` under the given id |
