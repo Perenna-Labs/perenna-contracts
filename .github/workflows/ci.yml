@@ -66,3 +66,11 @@ jobs:
         name: stellar-stream-wasm
         path: target/wasm32v1-none/release/stellar_stream.wasm
         if-no-files-found: error
+  ci-gate:
+    name: CI Aggregate Gate
+    needs: [check, wasm]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - name: Gate Check
+      run: echo "All required CI jobs (check, wasm) completed successfully."
