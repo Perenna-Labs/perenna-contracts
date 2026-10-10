@@ -72,6 +72,7 @@ earned  = deposit_amount * elapsed / duration        // i128, integer division
 | 10 | `WithdrawAmountTooHigh` | `amount > available` |
 | 11 | `NotCancelable` | `cancel` on a stream with `cancelable = false` |
 | 12 | `MathOverflow` | Any checked arithmetic overflows |
+| 13 | `InvalidAdmin` | Contract itself supplied as `admin` in `init` |
 
 Codes are stable and part of the ABI. Do not renumber. Removing a variant is a
 breaking change.
@@ -98,6 +99,7 @@ Every state-changing function emits exactly one event.
 
 - **Auth:** `admin.require_auth()`. The admin must authorize its own
   appointment.
+- **Validation:** `admin != env.current_contract_address()`, else `InvalidAdmin`.
 - **Effect:** stores `Admin`, sets `NextStreamId = 0`. Fails with
   `AlreadyInitialized` if `Admin` already set.
 - **Events:** none.

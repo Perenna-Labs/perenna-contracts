@@ -61,6 +61,17 @@ fn test_init_requires_admin_auth() {
 }
 
 #[test]
+fn test_init_rejects_contract_itself_as_admin() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register(StreamContract, ());
+    let client = StreamContractClient::new(&env, &contract_id);
+
+    let result = client.try_init(&contract_id);
+    assert_eq!(result, Err(Ok(StreamError::InvalidAdmin)));
+}
+
+#[test]
 fn test_init_double_initialization_fails() {
     let env = Env::default();
     env.mock_all_auths();

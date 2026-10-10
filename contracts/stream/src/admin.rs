@@ -8,6 +8,10 @@ pub fn initialize(env: &Env, admin: &Address) -> Result<(), StreamError> {
     // caller of `init` could install an arbitrary address as admin.
     admin.require_auth();
 
+    if admin == &env.current_contract_address() {
+        return Err(StreamError::InvalidAdmin);
+    }
+
     if storage::has_admin(env) {
         return Err(StreamError::AlreadyInitialized);
     }
