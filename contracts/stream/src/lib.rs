@@ -133,15 +133,8 @@ impl StreamContract {
                 deposit_amount,
                 start_time,
                 stop_time,
+                cancelable,
             },
-            &sender,
-            &recipient,
-            stream_id,
-            &token_addr,
-            deposit_amount,
-            start_time,
-            stop_time,
-            cancelable,
         );
 
         Ok(stream_id)

@@ -99,13 +99,13 @@ and Issues. For anything security-related, read `SECURITY.md` first.
 
 | Tool | Notes |
 | --- | --- |
-| **Rust** | stable (pinned in `rust-toolchain.toml`) |
+| **Rust** | stable (declared in `rust-toolchain.toml`) |
 | **Stellar CLI** | build/deploy helper |
 | **Make** | convenience targets (`make test/build/clippy/fmt`) |
 
 ## Quick start
 
-Prerequisites: Rust (the pinned toolchain in `rust-toolchain.toml` is applied
+Prerequisites: Rust (the stable toolchain declared in `rust-toolchain.toml` is applied
 automatically by `rustup`) and the Stellar CLI for deployment.
 
 ```bash
