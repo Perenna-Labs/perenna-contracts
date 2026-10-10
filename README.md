@@ -99,8 +99,8 @@ and Issues. For anything security-related, read `SECURITY.md` first.
 
 | Tool | Notes |
 | --- | --- |
-| **Rust** | stable (pinned in `rust-toolchain.toml`) |
-| **Stellar CLI** | build/deploy helper |
+| **Rust** | stable (declared in `rust-toolchain.toml`) |
+| **Stellar CLI** | **v25.2.0+** (v28.x recommended; required by `soroban-sdk` for `stellar contract build`) |
 | **Make** | convenience targets (`make test/build/clippy/fmt`) |
 
 ## Quick start
