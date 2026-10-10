@@ -757,6 +757,7 @@ fn test_cancel_before_start() {
 
 #[test]
 fn test_cancel_at_start_time() {
+fn test_cancel_at_stop_time() {
     let env = Env::default();
     env.mock_all_auths();
     let (client, _admin) = setup_contract(&env);
@@ -784,6 +785,12 @@ fn test_cancel_at_start_time() {
 
     assert_eq!(token_client.balance(&sender), deposit);
     assert_eq!(token_client.balance(&recipient), 0);
+    // Cancel exactly at stop_time: recipient gets full deposit, sender refund is zero
+    set_ledger_timestamp(&env, 2000);
+    client.cancel(&stream_id);
+
+    assert_eq!(token_client.balance(&recipient), deposit);
+    assert_eq!(token_client.balance(&sender), 0);
     assert_eq!(token_client.balance(&client.address), 0);
 
     let stream = client.get_stream(&stream_id);
