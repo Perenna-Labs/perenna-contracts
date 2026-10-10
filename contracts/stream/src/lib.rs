@@ -112,13 +112,15 @@ impl StreamContract {
 
         events::emit_stream_created(
             &env,
-            &sender,
-            &recipient,
-            stream_id,
-            &token_addr,
-            deposit_amount,
-            start_time,
-            stop_time,
+            &events::StreamCreated {
+                sender,
+                recipient,
+                stream_id,
+                token: token_addr,
+                deposit_amount,
+                start_time,
+                stop_time,
+            },
         );
 
         Ok(stream_id)
