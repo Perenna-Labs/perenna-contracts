@@ -40,9 +40,7 @@ request.
 Run the full check locally before opening a PR:
 
 ```bash
-make fmt
-make clippy
-make test
+make ci
 ```
 
 ## Tests
