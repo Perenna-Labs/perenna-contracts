@@ -178,6 +178,10 @@ impl StreamContract {
             .checked_sub(stream.recipient_withdrawn)
             .ok_or(StreamError::MathOverflow)?;
 
+        if amount <= 0 {
+            return Err(StreamError::ZeroWithdrawAmount);
+        }
+
         if amount > available {
             return Err(StreamError::WithdrawAmountTooHigh);
         }

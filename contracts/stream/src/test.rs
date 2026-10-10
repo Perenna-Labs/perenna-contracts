@@ -467,6 +467,38 @@ fn test_withdraw_too_much_fails() {
 }
 
 #[test]
+fn test_withdraw_zero_amount_fails() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let (token_client, token_admin_client) = create_token(&env, &sender);
+
+    let deposit: i128 = 1_000_000;
+    token_admin_client.mint(&sender, &deposit);
+
+    let stream_id = client.create_stream(
+        &sender,
+        &recipient,
+        &token_client.address,
+        &deposit,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+
+    set_ledger_timestamp(&env, 1500);
+    let before = client.get_stream(&stream_id);
+    let result = client.try_withdraw(&stream_id, &0_i128);
+
+    assert_eq!(result, Err(Ok(StreamError::ZeroWithdrawAmount)));
+    assert_eq!(client.get_stream(&stream_id), before);
+    assert_eq!(token_client.balance(&recipient), 0);
+}
+
+#[test]
 fn test_withdraw_multiple_times() {
     let env = Env::default();
     env.mock_all_auths();
