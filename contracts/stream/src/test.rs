@@ -642,6 +642,59 @@ fn test_cancel_not_cancelable_fails() {
 }
 
 #[test]
+fn test_non_cancelable_stream_lifecycle_end_to_end() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let (token_client, token_admin_client) = create_token(&env, &sender);
+
+    let deposit: i128 = 1_000_000;
+    token_admin_client.mint(&sender, &deposit);
+
+    let stream_id = client.create_stream(
+        &sender,
+        &recipient,
+        &token_client.address,
+        &deposit,
+        &1000_u64,
+        &2000_u64,
+        &false, // cancelable = false
+    );
+
+    // 1. Partial accrual at 50%
+    set_ledger_timestamp(&env, 1500);
+    assert_eq!(client.balance_of(&stream_id, &recipient), 500_000);
+    assert_eq!(client.balance_of(&stream_id, &sender), 500_000);
+
+    // 2. Cancellation attempt must fail with NotCancelable
+    let cancel_res = client.try_cancel(&stream_id);
+    assert_eq!(cancel_res, Err(Ok(StreamError::NotCancelable)));
+
+    // 3. Partial withdrawal succeeds
+    client.withdraw(&stream_id, &200_000_i128);
+    assert_eq!(token_client.balance(&recipient), 200_000);
+    assert_eq!(client.balance_of(&stream_id, &recipient), 300_000);
+
+    // 4. Complete accrual after stop_time (timestamp 2500)
+    set_ledger_timestamp(&env, 2500);
+    assert_eq!(client.balance_of(&stream_id, &recipient), 800_000);
+
+    // 5. Final withdrawal of all remaining tokens
+    client.withdraw(&stream_id, &800_000_i128);
+    assert_eq!(token_client.balance(&recipient), deposit);
+    assert_eq!(token_client.balance(&client.address), 0);
+
+    let stream = client.get_stream(&stream_id);
+    assert_eq!(stream.recipient_withdrawn, deposit);
+    assert_eq!(stream.remaining_balance, 0);
+    assert!(!stream.is_canceled);
+    assert!(!stream.cancelable);
+}
+
+#[test]
 fn test_cancel_already_canceled_fails() {
     let env = Env::default();
     env.mock_all_auths();
