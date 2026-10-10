@@ -20,7 +20,8 @@ pub struct Stream {
     pub stop_time: u64,
     /// `deposit_amount / duration`, integer division. Not used by contract
     /// logic (accrual is computed exactly from the deposit), but part of the
-    /// public `get_stream` ABI consumed by the application SDK.
+    /// public `get_stream` ABI consumed by the application SDK. May be zero
+    /// when `deposit_amount < duration`.
     pub rate_per_second: i128,
     pub remaining_balance: i128,
     pub recipient_withdrawn: i128,
