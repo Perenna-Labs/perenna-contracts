@@ -74,6 +74,7 @@ earned  = deposit_amount * elapsed / duration        // i128, integer division
 | 12 | `MathOverflow` | Any checked arithmetic overflows |
 | 13 | `InvalidAdmin` | Contract itself supplied as `admin` in `init` |
 | 13 | `InvalidWithdrawAmount` | `amount <= 0` in `withdraw` |
+| 13 | `ZeroWithdrawAmount` | `amount <= 0` in `withdraw` |
 
 Codes are stable and part of the ABI. Do not renumber. Removing a variant is a
 breaking change.
@@ -148,6 +149,7 @@ create_stream(
 
 - **Auth:** `recipient.require_auth()`.
 - **Validation:** `amount <= 0` returns `InvalidWithdrawAmount`;
+- **Validation:** `amount <= 0` returns `ZeroWithdrawAmount`;
   `amount <= earned - recipient_withdrawn`, else
   `WithdrawAmountTooHigh`; `StreamCanceled` if already cancelled;
   `StreamNotFound` if missing.
