@@ -21,4 +21,5 @@ pub enum StreamError {
     InvalidAdmin = 13,
     InvalidWithdrawAmount = 13,
     ZeroWithdrawAmount = 13,
+    SenderIsRecipient = 13,
 }
