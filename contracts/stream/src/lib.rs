@@ -203,6 +203,7 @@ impl StreamContract {
 
         if amount <= 0 {
             return Err(StreamError::InvalidWithdrawAmount);
+            return Err(StreamError::ZeroWithdrawAmount);
         }
 
         if amount > available {
