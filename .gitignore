@@ -1,4 +1,5 @@
 # Build output directories
+# Build artifacts
 /target
 **/target
 
@@ -6,9 +7,11 @@
 contracts/stream/test_snapshots/
 
 # Environment files that may carry credentials, keys, or IDs
+# Environment configurations and secrets
 .env
 .env.*
 !.env.example
 
 # Compiled WebAssembly artifacts outside build directories
+# Built wasm artifacts
 *.wasm
