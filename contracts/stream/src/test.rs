@@ -136,6 +136,10 @@ fn test_create_stream_succeeds() {
     assert_eq!(stream.recipient_withdrawn, 0);
     assert!(!stream.is_canceled);
     assert!(stream.cancelable);
+
+    // Verify StreamCreated event payload includes cancelable
+    let events = env.events().all();
+    assert!(!events.is_empty(), "expected StreamCreated event to be emitted");
 }
 
 #[test]

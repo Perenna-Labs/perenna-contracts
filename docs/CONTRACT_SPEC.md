@@ -85,7 +85,7 @@ All emitted via `#[contractevent]`.
 
 | Event | Fields | Emitted by |
 | --- | --- | --- |
-| `StreamCreated` | `sender, recipient, stream_id, token, deposit_amount, start_time, stop_time` | `create_stream` |
+| `StreamCreated` | `sender, recipient, stream_id, token, deposit_amount, start_time, stop_time, cancelable` | `create_stream` |
 | `TokensWithdrawn` | `recipient, stream_id, amount, remaining_balance` | `withdraw` |
 | `StreamCanceled` | `stream_id, sender, recipient, sender_refund, recipient_payout` | `cancel` |
 | `TokensWithdrawn` | `recipient, stream_id, amount, remaining_balance, recipient_withdrawn` | `withdraw` |
