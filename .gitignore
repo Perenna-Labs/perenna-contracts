@@ -3,8 +3,6 @@
 /target
 **/target
 
-# Snapshot test artifacts
-contracts/stream/test_snapshots/
 
 # Environment files that may carry credentials, keys, or IDs
 # Environment configurations and secrets
