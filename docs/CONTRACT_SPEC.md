@@ -64,11 +64,11 @@ earned  = deposit_amount * elapsed / duration        // i128, integer division
 | 2 | `AlreadyInitialized` | `init` called twice |
 | 3 | `Unauthorized` | Caller is neither recipient nor sender where one is required |
 | 4 | `StreamNotFound` | No `Stream` under the given id |
-| 5 | `StreamEnded` | Reserved |
+| 5 | `StreamEnded` | Reserved for ABI stability (unused in contract logic) |
 | 6 | `StreamCanceled` | Operation on an already-cancelled stream |
 | 7 | `InvalidTimeRange` | `start_time >= stop_time` |
 | 8 | `ZeroDeposit` | `deposit_amount <= 0` |
-| 9 | `AmountMismatch` | Reserved |
+| 9 | `AmountMismatch` | Reserved for ABI stability (unused in contract logic) |
 | 10 | `WithdrawAmountTooHigh` | `amount > available` |
 | 11 | `NotCancelable` | `cancel` on a stream with `cancelable = false` |
 | 12 | `MathOverflow` | Any checked arithmetic overflows |
