@@ -805,3 +805,66 @@ fn test_large_deposit_no_overflow() {
     let r_bal = client.balance_of(&stream_id, &recipient);
     assert_eq!(r_bal, 500_000_000_000_000);
 }
+
+#[test]
+fn test_contract_token_balance_lifecycle_invariants() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let (token_client, token_admin_client) = create_token(&env, &sender);
+
+    let deposit: i128 = 1_000_000;
+    token_admin_client.mint(&sender, &deposit);
+
+    // Initial state: contract holds 0
+    assert_eq!(token_client.balance(&client.address), 0);
+
+    // 1. After create: contract token balance must equal stream remaining_balance
+    let stream_id = client.create_stream(
+        &sender,
+        &recipient,
+        &token_client.address,
+        &deposit,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+    let s1 = client.get_stream(&stream_id);
+    assert_eq!(token_client.balance(&client.address), s1.remaining_balance);
+    assert_eq!(token_client.balance(&client.address), deposit);
+
+    // 2. After partial withdraw: contract token balance must still equal remaining_balance
+    set_ledger_timestamp(&env, 1500);
+    client.withdraw(&stream_id, &300_000_i128);
+    let s2 = client.get_stream(&stream_id);
+    assert_eq!(token_client.balance(&client.address), s2.remaining_balance);
+    assert_eq!(token_client.balance(&client.address), 700_000);
+
+    // 3. After cancel: contract token balance must be 0, remaining_balance must be 0
+    client.cancel(&stream_id);
+    let s3 = client.get_stream(&stream_id);
+    assert_eq!(s3.remaining_balance, 0);
+    assert_eq!(token_client.balance(&client.address), 0);
+
+    // 4. Test full withdrawal path invariant on a separate stream
+    token_admin_client.mint(&sender, &deposit);
+    let id2 = client.create_stream(
+        &sender,
+        &recipient,
+        &token_client.address,
+        &deposit,
+        &3000_u64,
+        &4000_u64,
+        &true,
+    );
+    assert_eq!(token_client.balance(&client.address), deposit);
+
+    set_ledger_timestamp(&env, 5000);
+    client.withdraw(&id2, &deposit);
+    let s4 = client.get_stream(&id2);
+    assert_eq!(s4.remaining_balance, 0);
+    assert_eq!(token_client.balance(&client.address), 0);
+}
