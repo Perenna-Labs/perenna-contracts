@@ -578,6 +578,42 @@ fn test_cancel_before_start() {
 }
 
 #[test]
+fn test_cancel_at_stop_time() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let (token_client, token_admin_client) = create_token(&env, &sender);
+
+    let deposit: i128 = 1_000_000;
+    token_admin_client.mint(&sender, &deposit);
+
+    let stream_id = client.create_stream(
+        &sender,
+        &recipient,
+        &token_client.address,
+        &deposit,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+
+    // Cancel exactly at stop_time: recipient gets full deposit, sender refund is zero
+    set_ledger_timestamp(&env, 2000);
+    client.cancel(&stream_id);
+
+    assert_eq!(token_client.balance(&recipient), deposit);
+    assert_eq!(token_client.balance(&sender), 0);
+    assert_eq!(token_client.balance(&client.address), 0);
+
+    let stream = client.get_stream(&stream_id);
+    assert!(stream.is_canceled);
+    assert_eq!(stream.remaining_balance, 0);
+}
+
+#[test]
 fn test_cancel_after_partial_withdrawal() {
     let env = Env::default();
     env.mock_all_auths();
