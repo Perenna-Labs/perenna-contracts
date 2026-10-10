@@ -1,82 +1,66 @@
 name: CI
-
 on:
   push:
-    branches: [main]
+    branches:
+    - main
   pull_request:
-    branches: [main]
-
+    branches:
+    - main
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 env:
   CARGO_TERM_COLOR: always
-
 jobs:
   check:
     name: Check, Test & Clippy
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
+    - name: Install Rust toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@c8ff772090ab9d00f7f7bd7b388f3c3032282e3b
+    - name: Cache cargo registry & build
+      uses: actions/cache@v4
+      with:
+        path: '~/.cargo/registry
 
-      - name: Install Rust toolchain
-        # v2.0.0; reads rust-toolchain.toml for channel, components, and targets.
-        uses: actions-rust-lang/setup-rust-toolchain@c8ff772090ab9d00f7f7bd7b388f3c3032282e3b
+          ~/.cargo/git
 
-      - name: Cache cargo registry & build
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+          target
 
-      - name: Cargo check
-        run: cargo check --all-targets
+          '
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: '${{ runner.os }}-cargo-
 
-      - name: Cargo check (wasm target)
-        run: cargo check --target wasm32v1-none --all-targets
-
-      - name: Cargo test
-        run: cargo test
-
-      - name: Cargo clippy
-        run: cargo clippy --all-targets -- -D warnings
-
-      - name: Cargo fmt check
-        run: cargo fmt --all -- --check
-
+          '
+    - name: Cargo check
+      run: cargo check --all-targets
+    - name: Cargo check (wasm target)
+      run: cargo check --target wasm32v1-none --all-targets
+    - name: Cargo test
+      run: cargo test
+    - name: Cargo clippy
+      run: cargo clippy --all-targets -- -D warnings
+    - name: Cargo fmt check
+      run: cargo fmt --all -- --check
   wasm:
     name: Build Release Wasm
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        # v2.0.0; reads rust-toolchain.toml for channel, components, and targets.
-        uses: actions-rust-lang/setup-rust-toolchain@c8ff772090ab9d00f7f7bd7b388f3c3032282e3b
-
-      - name: Install Stellar CLI
-        run: |
-          curl -sSL -o /tmp/stellar-cli.tar.gz \
-            https://github.com/stellar/stellar-cli/releases/download/v28.1.0/stellar-cli-28.1.0-x86_64-unknown-linux-gnu.tar.gz
-          tar xzf /tmp/stellar-cli.tar.gz -C /tmp
-          sudo mv /tmp/stellar /usr/local/bin/stellar
-          stellar --version
-
-      - name: Build release wasm
-        # soroban-sdk v28 requires `stellar contract build`, not a raw cargo build.
-        run: stellar contract build
-
-      - name: Upload wasm artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: stellar-stream-wasm
-          path: target/wasm32v1-none/release/stellar_stream.wasm
-          if-no-files-found: error
+    - uses: actions/checkout@v7
+    - name: Install Rust toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@c8ff772090ab9d00f7f7bd7b388f3c3032282e3b
+    - name: Install Stellar CLI
+      run: "curl -sSL -o /tmp/stellar-cli.tar.gz \\\n  https://github.com/stellar/stellar-cli/releases/download/v28.1.0/stellar-cli-28.1.0-x86_64-unknown-linux-gnu.tar.gz\n\
+        tar xzf /tmp/stellar-cli.tar.gz -C /tmp\nsudo mv /tmp/stellar /usr/local/bin/stellar\n\
+        stellar --version\n"
+    - name: Build release wasm
+      run: stellar contract build
+    - name: Upload wasm artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: stellar-stream-wasm
+        path: target/wasm32v1-none/release/stellar_stream.wasm
+        if-no-files-found: error
