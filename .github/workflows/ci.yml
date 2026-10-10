@@ -13,6 +13,7 @@ jobs:
   check:
     name: Check, Test & Clippy
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -48,6 +49,7 @@ jobs:
   wasm:
     name: Build Release Wasm
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
