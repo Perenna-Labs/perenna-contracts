@@ -20,4 +20,8 @@ fmt:
 
 check:
 	cargo check --all-targets
-ci: fmt clippy test check
+ci:
+	$(MAKE) fmt
+	$(MAKE) clippy
+	$(MAKE) test
+	$(MAKE) check
