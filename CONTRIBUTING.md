@@ -30,7 +30,9 @@ request.
 - Rust edition 2021, `soroban-sdk` 28.x, target `wasm32v1-none`.
 - No floating-point math. All amounts are `i128` in the token's base unit.
 - No `unwrap()` or `expect()` outside of `#[cfg(test)]` code. Return a
-  `StreamError` instead.
+  `StreamError` instead. Descriptive defaults like `unwrap_or` are permitted
+  for fallback values (e.g. initial counter state) when justified by a comment
+  at the call site.
 - Use checked arithmetic (`checked_add`, `checked_mul`, …) and map failure to
   `StreamError::MathOverflow`.
 - Every state change emits an event. Every public function has a doc comment.
