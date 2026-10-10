@@ -6,6 +6,7 @@ on:
   pull_request:
     branches:
     - main
+  workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -66,3 +67,14 @@ jobs:
         name: stellar-stream-wasm
         path: target/wasm32v1-none/release/stellar_stream.wasm
         if-no-files-found: error
+  dry-run:
+    name: Manual Dry Run Build
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install Rust toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@c8ff772090ab9d00f7f7bd7b388f3c3032282e3b
+    - name: Dry run cargo check
+      run: cargo check --all-targets
