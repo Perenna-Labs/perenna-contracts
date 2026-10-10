@@ -17,11 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-    - uses: actions/checkout@v7
+    - # Third-party GitHub Actions are pinned to commit SHAs for security hardening
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - name: Install Rust toolchain
       uses: actions-rust-lang/setup-rust-toolchain@c8ff772090ab9d00f7f7bd7b388f3c3032282e3b
     - name: Cache cargo registry & build
-      uses: actions/cache@v6
+      uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
       with:
         path: '~/.cargo/registry
 
@@ -47,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - name: Install Rust toolchain
       uses: actions-rust-lang/setup-rust-toolchain@c8ff772090ab9d00f7f7bd7b388f3c3032282e3b
     - name: Install Stellar CLI
@@ -61,7 +62,7 @@ jobs:
     - name: Build release wasm
       run: stellar contract build
     - name: Upload wasm artifact
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
       with:
         name: stellar-stream-wasm
         path: target/wasm32v1-none/release/stellar_stream.wasm
