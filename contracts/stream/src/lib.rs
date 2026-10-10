@@ -28,8 +28,12 @@ fn compute_earned(stream: &Stream, current_time: u64) -> Result<i128, StreamErro
     let elapsed = current_time
         .checked_sub(stream.start_time)
         .ok_or(StreamError::MathOverflow)?;
-    // create_stream guarantees start_time < stop_time, so duration is positive.
-    let duration = stream.stop_time - stream.start_time;
+    // create_stream guarantees this range; retain a fail-closed guard for any
+    // malformed persisted stream and classify it as a time-range error.
+    let duration = stream
+        .stop_time
+        .checked_sub(stream.start_time)
+        .ok_or(StreamError::InvalidTimeRange)?;
 
     let elapsed_i128 = elapsed as i128;
     let duration_i128 = duration as i128;
