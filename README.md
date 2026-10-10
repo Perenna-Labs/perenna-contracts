@@ -38,6 +38,7 @@ indexer) lives in a separate repository.
 - [Contract interface (summary)](#contract-interface-summary)
 - [Security](#security)
 - [Contributing](#contributing)
+- [Changelog](CHANGELOG.md)
 - [Contributors](#contributors)
 
 ## How it uses Stellar
