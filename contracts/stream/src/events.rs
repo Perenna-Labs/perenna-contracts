@@ -19,6 +19,7 @@ pub struct TokensWithdrawn {
     pub stream_id: u64,
     pub amount: i128,
     pub remaining_balance: i128,
+    pub recipient_withdrawn: i128,
 }
 
 #[contractevent]
@@ -57,12 +58,14 @@ pub fn emit_tokens_withdrawn(
     stream_id: u64,
     amount: i128,
     remaining_balance: i128,
+    recipient_withdrawn: i128,
 ) {
     env.events().publish_event(&TokensWithdrawn {
         recipient: recipient.clone(),
         stream_id,
         amount,
         remaining_balance,
+        recipient_withdrawn,
     });
 }
 

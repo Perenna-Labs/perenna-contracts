@@ -400,6 +400,10 @@ fn test_withdraw_partial() {
     let stream = client.get_stream(&stream_id);
     assert_eq!(stream.recipient_withdrawn, 300_000);
     assert_eq!(stream.remaining_balance, 700_000);
+
+    // Verify TokensWithdrawn event is published
+    let events = env.events().all();
+    assert!(!events.is_empty(), "expected TokensWithdrawn event");
 }
 
 #[test]

@@ -202,6 +202,7 @@ impl StreamContract {
             stream_id,
             amount,
             stream.remaining_balance,
+            stream.recipient_withdrawn,
         );
 
         Ok(())
