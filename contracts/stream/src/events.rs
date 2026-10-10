@@ -10,6 +10,7 @@ pub struct StreamCreated {
     pub deposit_amount: i128,
     pub start_time: u64,
     pub stop_time: u64,
+    pub cancelable: bool,
 }
 
 #[contractevent]
@@ -39,6 +40,7 @@ pub fn emit_stream_created(
     deposit_amount: i128,
     start_time: u64,
     stop_time: u64,
+    cancelable: bool,
 ) {
     env.events().publish_event(&StreamCreated {
         sender: sender.clone(),
@@ -48,6 +50,7 @@ pub fn emit_stream_created(
         deposit_amount,
         start_time,
         stop_time,
+        cancelable,
     });
 }
 
