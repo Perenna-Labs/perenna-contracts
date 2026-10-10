@@ -361,6 +361,16 @@ fn test_balance_of_unauthorized_address() {
     assert_eq!(result, Err(Ok(StreamError::Unauthorized)));
 }
 
+#[test]
+fn test_balance_of_stream_not_found() {
+    let env = Env::default();
+    let (client, _admin) = setup_contract(&env);
+    let target = Address::generate(&env);
+
+    let result = client.try_balance_of(&999_u64, &target);
+    assert_eq!(result, Err(Ok(StreamError::StreamNotFound)));
+}
+
 // =============================================================================
 // Withdrawal Tests
 // =============================================================================
