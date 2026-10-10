@@ -116,6 +116,7 @@ make test      # run the test suite
 make build     # build the release wasm artifact
 make clippy    # lint with warnings as errors
 make fmt       # format
+make ci        # run all local checks (fmt, clippy, test, check)
 ```
 
 The release artifact is written to
