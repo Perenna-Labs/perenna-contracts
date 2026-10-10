@@ -212,6 +212,79 @@ fn test_create_multiple_streams_increments_id() {
     assert_eq!(id1, 1);
 }
 
+#[test]
+fn test_stream_balance_isolation() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+
+    let sender0 = Address::generate(&env);
+    let recipient0 = Address::generate(&env);
+    let sender1 = Address::generate(&env);
+    let recipient1 = Address::generate(&env);
+
+    let (token_client, token_admin_client) = create_token(&env, &sender0);
+
+    let deposit0: i128 = 1_000_000;
+    let deposit1: i128 = 2_000_000;
+    token_admin_client.mint(&sender0, &deposit0);
+    token_admin_client.mint(&sender1, &deposit1);
+
+    // Stream 0: [1000..2000], cancelable
+    let id0 = client.create_stream(
+        &sender0,
+        &recipient0,
+        &token_client.address,
+        &deposit0,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+
+    // Stream 1: [1000..3000], cancelable
+    let id1 = client.create_stream(
+        &sender1,
+        &recipient1,
+        &token_client.address,
+        &deposit1,
+        &1000_u64,
+        &3000_u64,
+        &true,
+    );
+
+    // At timestamp 1500:
+    // Stream 0 is at 50%: recipient0 has 500_000, sender0 has 500_000
+    // Stream 1 is at 25%: recipient1 has 500_000, sender1 has 1_500_000
+    set_ledger_timestamp(&env, 1500);
+
+    assert_eq!(client.balance_of(&id0, &recipient0), 500_000);
+    assert_eq!(client.balance_of(&id0, &sender0), 500_000);
+    assert_eq!(
+        client.balance_of(&id0, &recipient0) + client.balance_of(&id0, &sender0),
+        deposit0
+    );
+
+    assert_eq!(client.balance_of(&id1, &recipient1), 500_000);
+    assert_eq!(client.balance_of(&id1, &sender1), 1_500_000);
+    assert_eq!(
+        client.balance_of(&id1, &recipient1) + client.balance_of(&id1, &sender1),
+        deposit1
+    );
+
+    // Partial withdrawal on Stream 1 does not affect Stream 0
+    client.withdraw(&id1, &200_000_i128);
+    assert_eq!(client.balance_of(&id0, &recipient0), 500_000);
+    assert_eq!(client.balance_of(&id0, &sender0), 500_000);
+    assert_eq!(client.balance_of(&id1, &recipient1), 300_000);
+
+    // Cancelling Stream 0 leaves Stream 1 completely intact
+    client.cancel(&id0);
+    assert!(client.get_stream(&id0).is_canceled);
+    assert_eq!(client.balance_of(&id1, &recipient1), 300_000);
+    assert_eq!(client.balance_of(&id1, &sender1), 1_500_000);
+    assert!(!client.get_stream(&id1).is_canceled);
+}
+
 // =============================================================================
 // Balance Calculation Tests
 // =============================================================================
