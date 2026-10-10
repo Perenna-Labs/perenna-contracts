@@ -642,6 +642,48 @@ fn test_cancel_not_cancelable_fails() {
 }
 
 #[test]
+fn test_cancel_requires_sender_auth() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let (token_client, token_admin_client) = create_token(&env, &sender);
+
+    let deposit: i128 = 1_000_000;
+    token_admin_client.mint(&sender, &deposit);
+
+    let stream_id = client.create_stream(
+        &sender,
+        &recipient,
+        &token_client.address,
+        &deposit,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+
+    set_ledger_timestamp(&env, 1500);
+
+    // Cancel without mock_all_auths must fail because sender auth is missing
+    let unauthed_env = Env::default();
+    // Re-bind client in env without mock auth
+    let result = client.mock_auths(&[]).try_cancel(&stream_id);
+    assert!(result.is_err(), "cancel without sender auth must be rejected");
+
+    // Stream remains active, recipient balance untouched
+    let stream = client.get_stream(&stream_id);
+    assert!(!stream.is_canceled);
+    assert_eq!(token_client.balance(&recipient), 0);
+
+    // Authorised cancel from sender succeeds
+    client.mock_all_auths();
+    assert!(client.try_cancel(&stream_id).is_ok());
+    assert!(client.get_stream(&stream_id).is_canceled);
+}
+
+#[test]
 fn test_cancel_already_canceled_fails() {
     let env = Env::default();
     env.mock_all_auths();
