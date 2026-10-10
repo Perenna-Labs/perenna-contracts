@@ -64,3 +64,10 @@ jobs:
         name: stellar-stream-wasm
         path: target/wasm32v1-none/release/stellar_stream.wasm
         if-no-files-found: error
+    - uses: actions/checkout@v4
+    - name: Upload wasm artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: stellar-stream-wasm
+        path: target/wasm32v1-none/release/stellar_stream.wasm
+        if-no-files-found: error
