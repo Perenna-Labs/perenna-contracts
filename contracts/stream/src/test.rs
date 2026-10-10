@@ -555,6 +555,10 @@ fn test_cancel_at_midpoint() {
     let stream = client.get_stream(&stream_id);
     assert!(stream.is_canceled);
     assert_eq!(stream.remaining_balance, 0);
+
+    // Verify StreamCanceled event is published
+    let events = env.events().all();
+    assert!(!events.is_empty(), "expected StreamCanceled event");
 }
 
 #[test]

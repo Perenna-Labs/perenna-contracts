@@ -25,6 +25,8 @@ pub struct TokensWithdrawn {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StreamCanceled {
     pub stream_id: u64,
+    pub sender: Address,
+    pub recipient: Address,
     pub sender_refund: i128,
     pub recipient_payout: i128,
 }
@@ -51,11 +53,15 @@ pub fn emit_tokens_withdrawn(
 pub fn emit_stream_canceled(
     env: &Env,
     stream_id: u64,
+    sender: &Address,
+    recipient: &Address,
     sender_refund: i128,
     recipient_payout: i128,
 ) {
     env.events().publish_event(&StreamCanceled {
         stream_id,
+        sender: sender.clone(),
+        recipient: recipient.clone(),
         sender_refund,
         recipient_payout,
     });

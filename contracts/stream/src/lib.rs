@@ -261,7 +261,14 @@ impl StreamContract {
             );
         }
 
-        events::emit_stream_canceled(&env, stream_id, sender_refund, recipient_payout);
+        events::emit_stream_canceled(
+            &env,
+            stream_id,
+            &stream.sender,
+            &stream.recipient,
+            sender_refund,
+            recipient_payout,
+        );
 
         Ok(())
     }

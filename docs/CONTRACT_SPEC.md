@@ -87,7 +87,7 @@ All emitted via `#[contractevent]`.
 | --- | --- | --- |
 | `StreamCreated` | `sender, recipient, stream_id, token, deposit_amount, start_time, stop_time` | `create_stream` |
 | `TokensWithdrawn` | `recipient, stream_id, amount, remaining_balance` | `withdraw` |
-| `StreamCanceled` | `stream_id, sender_refund, recipient_payout` | `cancel` |
+| `StreamCanceled` | `stream_id, sender, recipient, sender_refund, recipient_payout` | `cancel` |
 
 Every state-changing function emits exactly one event.
 
