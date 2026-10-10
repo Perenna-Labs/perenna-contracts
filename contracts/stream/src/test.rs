@@ -70,6 +70,51 @@ fn test_init_double_initialization_fails() {
     assert_eq!(result, Err(Ok(StreamError::AlreadyInitialized)));
 }
 
+#[test]
+fn test_operations_before_init_fail() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register(StreamContract, ());
+    let client = StreamContractClient::new(&env, &contract_id);
+
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let token = Address::generate(&env);
+
+    // create_stream fails before init
+    let create_res = client.try_create_stream(
+        &sender,
+        &recipient,
+        &token,
+        &1_000_000_i128,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+    assert_eq!(create_res, Err(Ok(StreamError::NotInitialized)));
+
+    // balance_of fails before init
+    let bal_res = client.try_balance_of(&0_u64, &recipient);
+    assert_eq!(bal_res, Err(Ok(StreamError::NotInitialized)));
+
+    // get_stream fails before init
+    let get_res = client.try_get_stream(&0_u64);
+    assert_eq!(get_res, Err(Ok(StreamError::NotInitialized)));
+
+    // withdraw fails before init
+    let withdraw_res = client.try_withdraw(&0_u64, &100_i128);
+    assert_eq!(withdraw_res, Err(Ok(StreamError::NotInitialized)));
+
+    // cancel fails before init
+    let cancel_res = client.try_cancel(&0_u64);
+    assert_eq!(cancel_res, Err(Ok(StreamError::NotInitialized)));
+
+    // init succeeds and subsequent operations proceed as expected
+    let admin = Address::generate(&env);
+    assert!(client.try_init(&admin).is_ok());
+    assert_eq!(client.try_get_stream(&0_u64), Err(Ok(StreamError::StreamNotFound)));
+}
+
 // =============================================================================
 // Stream Creation Tests
 // =============================================================================

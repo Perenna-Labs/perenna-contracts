@@ -46,6 +46,14 @@ fn compute_earned(stream: &Stream, current_time: u64) -> Result<i128, StreamErro
     Ok(earned)
 }
 
+fn require_initialized(env: &Env) -> Result<(), StreamError> {
+    if storage::has_admin(env) {
+        Ok(())
+    } else {
+        Err(StreamError::NotInitialized)
+    }
+}
+
 #[contractimpl]
 impl StreamContract {
     /// Initialize the contract with an admin address. Can only be called once.
@@ -66,6 +74,8 @@ impl StreamContract {
         stop_time: u64,
         cancelable: bool,
     ) -> Result<u64, StreamError> {
+        require_initialized(&env)?;
+
         sender.require_auth();
 
         if deposit_amount <= 0 {
@@ -128,6 +138,7 @@ impl StreamContract {
     /// For the recipient: earned - already_withdrawn
     /// For the sender: deposit_amount - earned (refundable portion)
     pub fn balance_of(env: Env, stream_id: u64, target: Address) -> Result<i128, StreamError> {
+        require_initialized(&env)?;
         let stream = storage::get_stream(&env, stream_id)?;
         storage::extend_stream_ttl(&env, stream_id);
 
@@ -156,6 +167,7 @@ impl StreamContract {
 
     /// Retrieve the full stream data struct by ID.
     pub fn get_stream(env: Env, stream_id: u64) -> Result<Stream, StreamError> {
+        require_initialized(&env)?;
         let stream = storage::get_stream(&env, stream_id)?;
         storage::extend_stream_ttl(&env, stream_id);
         Ok(stream)
@@ -163,6 +175,7 @@ impl StreamContract {
 
     /// Withdraw accrued tokens from a stream. Only the recipient may call this.
     pub fn withdraw(env: Env, stream_id: u64, amount: i128) -> Result<(), StreamError> {
+        require_initialized(&env)?;
         let mut stream = storage::get_stream(&env, stream_id)?;
         storage::extend_stream_ttl(&env, stream_id);
 
@@ -211,6 +224,7 @@ impl StreamContract {
     /// marked as cancelable. Distributes earned tokens to recipient and refunds
     /// the remainder to the sender.
     pub fn cancel(env: Env, stream_id: u64) -> Result<(), StreamError> {
+        require_initialized(&env)?;
         let mut stream = storage::get_stream(&env, stream_id)?;
         storage::extend_stream_ttl(&env, stream_id);
 
