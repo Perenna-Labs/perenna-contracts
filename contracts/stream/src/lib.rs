@@ -25,9 +25,8 @@ fn compute_earned(stream: &Stream, current_time: u64) -> Result<i128, StreamErro
     if current_time >= stream.stop_time {
         return Ok(stream.deposit_amount);
     }
-    let elapsed = current_time
-        .checked_sub(stream.start_time)
-        .ok_or(StreamError::MathOverflow)?;
+    // Guaranteed non-negative since current_time > stream.start_time is guarded above.
+    let elapsed = current_time - stream.start_time;
     // create_stream guarantees this range; retain a fail-closed guard for any
     // malformed persisted stream and classify it as a time-range error.
     let duration = stream
