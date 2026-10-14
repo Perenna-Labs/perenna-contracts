@@ -61,8 +61,10 @@ jobs:
     - name: Build release wasm
       run: stellar contract build
     - name: Upload wasm artifact
+      if: github.event_name == 'push'
       uses: actions/upload-artifact@v7
       with:
         name: stellar-stream-wasm
         path: target/wasm32v1-none/release/stellar_stream.wasm
         if-no-files-found: error
+        retention-days: 7
