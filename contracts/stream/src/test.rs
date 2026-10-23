@@ -1387,3 +1387,23 @@ fn test_cancel_requires_sender_auth() {
     assert!(client.try_cancel(&stream_id).is_ok());
     assert!(client.get_stream(&stream_id).is_canceled);
 }
+
+#[test]
+fn test_reject_stream_contract_as_token_address() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin) = setup_contract(&env);
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+
+    let res = client.try_create_stream(
+        &sender,
+        &recipient,
+        &client.address,
+        &1_000_000,
+        &1000_u64,
+        &2000_u64,
+        &true,
+    );
+    assert_eq!(res, Err(Ok(StreamError::InvalidToken)));
+}
