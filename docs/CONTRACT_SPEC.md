@@ -76,6 +76,7 @@ earned  = deposit_amount * elapsed / duration        // i128, integer division
 | 14 | `InvalidWithdrawAmount` | `amount < 0` in `withdraw` |
 | 15 | `ZeroWithdrawAmount` | `amount == 0` in `withdraw` |
 | 16 | `SenderIsRecipient` | `sender == recipient` in `create_stream` |
+| 17 | `InvalidToken` | `token_addr == env.current_contract_address()` in `create_stream` |
 
 Codes are stable and part of the ABI. Do not renumber. Removing a variant is a
 breaking change.

@@ -89,6 +89,9 @@ impl StreamContract {
         if sender == recipient {
             return Err(StreamError::SenderIsRecipient);
         }
+        if token_addr == env.current_contract_address() {
+            return Err(StreamError::InvalidToken);
+        }
 
         // Informational rate for clients. The remainder from integer division
         // does not affect distribution, which uses the exact earned formula
