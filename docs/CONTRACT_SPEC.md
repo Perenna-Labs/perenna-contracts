@@ -38,7 +38,7 @@ extended on every access.
 | `deposit_amount` | `i128` | Total locked at creation, in base units |
 | `start_time` | `u64` | Unix seconds when accrual begins |
 | `stop_time` | `u64` | Unix seconds when accrual completes |
-| `rate_per_second` | `i128` | `deposit_amount / duration`, integer division (informational) |
+| `rate_per_second` | `i128` | `deposit_amount / duration`, integer division (informational; can be zero when `deposit_amount < duration`) |
 | `remaining_balance` | `i128` | Tokens still held by the contract for this stream |
 | `recipient_withdrawn` | `i128` | Cumulative amount withdrawn by the recipient |
 | `is_canceled` | `bool` | Set once cancellation completes |
