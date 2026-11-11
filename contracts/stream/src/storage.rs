@@ -3,22 +3,21 @@ use soroban_sdk::{Address, Env};
 use crate::error::StreamError;
 use crate::types::{DataKey, Stream};
 
-const PERSISTENT_TTL_THRESHOLD: u32 = 17_280;
-const PERSISTENT_TTL_EXTEND: u32 = 518_400;
+/// Shared TTL boundaries for both instance and persistent entries (~30 days at 5s/ledger).
+const TTL_THRESHOLD: u32 = 17_280;
+const TTL_EXTEND: u32 = 518_400;
 
 // Instance entries share the contract instance's TTL and are not extended
 // automatically, so every instance write must bump them explicitly. When the
 // instance TTL reaches zero the contract is archived and unusable until
 // restored.
-const INSTANCE_TTL_THRESHOLD: u32 = 17_280;
-const INSTANCE_TTL_EXTEND: u32 = 518_400;
 
 /// Extends the TTL of the contract instance and all instance entries
 /// (`Admin`, `NextStreamId`).
 pub fn extend_instance_ttl(env: &Env) {
     env.storage()
         .instance()
-        .extend_ttl(INSTANCE_TTL_THRESHOLD, INSTANCE_TTL_EXTEND);
+        .extend_ttl(TTL_THRESHOLD, TTL_EXTEND);
 }
 
 // --- Admin Storage ---
@@ -66,5 +65,5 @@ pub fn extend_stream_ttl(env: &Env, stream_id: u64) {
     let key = DataKey::Stream(stream_id);
     env.storage()
         .persistent()
-        .extend_ttl(&key, PERSISTENT_TTL_THRESHOLD, PERSISTENT_TTL_EXTEND);
+        .extend_ttl(&key, TTL_THRESHOLD, TTL_EXTEND);
 }
