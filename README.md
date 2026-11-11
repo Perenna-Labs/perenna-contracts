@@ -139,6 +139,15 @@ interface.
 
 Full parameters, return types, auth, and events: `docs/CONTRACT_SPEC.md`.
 
+## Deployed contracts
+
+> **Notice:** Contracts are unaudited and intended for testnet and evaluation only. Do not deploy or use on mainnet without a formal security audit (see `SECURITY.md`).
+
+| Network | Contract ID | Explorer |
+| --- | --- | --- |
+| **Testnet** | `TBD` | [StellarExpert Testnet Explorer](https://stellar.expert/explorer/testnet) |
+| **Mainnet** | *(Unaudited – none)* | — |
+
 ## Security
 
 - **Never commit secrets** — keep keys, seed phrases, and `.env` files out of source control.

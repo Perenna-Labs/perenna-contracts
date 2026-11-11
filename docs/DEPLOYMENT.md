@@ -85,7 +85,7 @@ block explorer (e.g. `https://stellar.expert/explorer/testnet/contract/$CONTRACT
 After a successful deploy:
 
 1. Add the contract ID to the release notes for the matching version tag.
-2. Add the explorer link to the README's interface section.
+2. Add the explorer link to the README's "Deployed contracts" section.
 3. Update the application repo's environment variables.
 
 ## Redeploying
