@@ -38,6 +38,7 @@ pub fn get_next_stream_id(env: &Env) -> u64 {
     env.storage()
         .instance()
         .get(&DataKey::NextStreamId)
+        // Defaults to 0 before the first stream is created; subsequent IDs increment from 0.
         .unwrap_or(0)
 }
 
